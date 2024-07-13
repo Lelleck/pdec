@@ -1,7 +1,8 @@
 use std::env;
 
-use egui::Ui;
-use log::{debug, Log};
+use crate::utils::label_input;
+use egui::{TextEdit, Ui};
+use log::debug;
 use reqwest::{blocking::ClientBuilder, Url};
 use serde_derive::{Deserialize, Serialize};
 
@@ -28,7 +29,11 @@ impl Screen for LoginScreen {
     fn update(&mut self, ui: &mut Ui) -> OptScreen {
         label_input(ui, "Endpoint: ", &mut self.endpoint);
         label_input(ui, "Username: ", &mut self.username);
-        label_input(ui, "Password: ", &mut self.password);
+        ui.horizontal(|ui| {
+            ui.label("Password");
+            let text_edit = TextEdit::singleline(&mut self.password).password(true);
+            ui.add(text_edit);
+        });
         ui.label(&self.message);
         if ui.button("Login").clicked() {
             return self.attempt_login();
@@ -50,15 +55,16 @@ struct LoginResponse {
 }
 
 impl LoginScreen {
-    fn attempt_environment_login(&mut self) -> OptScreen {
+    pub fn fill_from_environment(&mut self) -> Option<()> {
         let endpoint = env::var("ANALYSER_ENDPOINT").ok()?;
         let username = env::var("ANALYSER_USERNAME").ok()?;
         let password = env::var("ANALYSER_PASSWORD").ok()?;
 
-        Some(
-            self.attempt_environment_login()
-                .expect("Failed to log in via environment variables"),
-        )
+        self.endpoint = endpoint;
+        self.username = username;
+        self.password = password;
+
+        None
     }
 
     fn attempt_login(&mut self) -> OptScreen {
@@ -92,13 +98,6 @@ impl LoginScreen {
         }
 
         debug!("Successfully logged in");
-        Some(DisplayScreen::boxed(client))
+        Some(DisplayScreen::boxed(client, self.endpoint.clone()))
     }
-}
-
-fn label_input(ui: &mut Ui, label: &str, text: &mut String) {
-    ui.horizontal(|ui| {
-        ui.label(label);
-        ui.text_edit_singleline(text);
-    });
 }

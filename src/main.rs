@@ -1,11 +1,12 @@
 use eframe::egui;
-use log::{debug, Log};
+use log::{debug};
 use login::LoginScreen;
 use screen::Screen;
 
 pub mod display;
 pub mod login;
 pub mod screen;
+pub mod utils;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
@@ -24,14 +25,17 @@ pub struct EguiApp {
 
 impl EguiApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        let mut screen = LoginScreen::boxed();
+        screen.fill_from_environment();
+
         Self {
-            current_screen: LoginScreen::boxed(),
+            current_screen: screen,
         }
     }
 }
 
 impl eframe::App for EguiApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Some(next_screen) = self.current_screen.update(ui) {
                 debug!("Switching screen to {:?}", next_screen);
