@@ -45,10 +45,6 @@ impl EguiApp {
 
 impl eframe::App for EguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top("disclaimer").show(ctx, |ui| {
-            ui.heading("Not fit for analysis... Uses randomized data.");
-        });
-
         egui::TopBottomPanel::bottom("version").show(ctx, |ui| {
             let version_str = env!("CARGO_PKG_VERSION");
             let info_str = format!(

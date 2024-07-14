@@ -154,10 +154,11 @@ impl DisplayScreen {
             let x_end = team_time.end.timestamp() as f64;
             let points = PlotPoints::new(vec![[x_start, offset], [x_end, offset]]);
             let color = if team_time.team == Team::Axis {
-                Color32::RED
+                Color32::BLACK
             } else {
-                Color32::BLUE
+                Color32::BLACK
             };
+
             let line = Line::new(points)
                 .style(egui_plot::LineStyle::Solid)
                 .width(self.width)
@@ -173,7 +174,7 @@ impl DisplayScreen {
             let point = PlotPoint::new(x, offset);
 
             // ui.zoom_bounds(zoom_factor, center)
-            let widget = RichText::new(&player.0.name).strong().size(10.0);
+            let widget = RichText::new(&player.0.name).strong().size(20.0);
             let text = Text::new(point, widget);
 
             ui.add(text);

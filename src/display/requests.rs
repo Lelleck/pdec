@@ -1,7 +1,6 @@
 use std::vec;
 
 use chrono::{DateTime, Utc};
-use rand::Rng;
 use regex::Regex;
 use reqwest::{blocking::Client, Url};
 use serde_derive::{Deserialize, Serialize};
@@ -117,12 +116,7 @@ fn historical_log_into_intermediate(logs: Vec<HistoricalLog>) -> Vec<Intermediat
 
             // TODO: CRCON has a bug where it wont send the actual logs so we have to do this.
             // let team_match = last_match.unwrap().as_str();
-            let team_match = if rand::thread_rng().gen_bool(0.5) {
-                "Allies"
-            } else {
-                "Axis"
-            };
-
+            let team_match = "Allies";
             let team = match team_match {
                 "Allies" => Team::Allies,
                 _ => Team::Axis,
