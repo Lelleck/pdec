@@ -1,6 +1,8 @@
+use std::ops::RangeInclusive;
+
 use chrono::{DateTime, Utc};
 use egui::{Color32, Slider, Stroke, Ui, Vec2b};
-use egui_plot::{Line, Plot, PlotPoints, PlotUi};
+use egui_plot::{GridMark, Line, Plot, PlotPoints, PlotUi};
 use log::debug;
 use reqwest::blocking::Client;
 
@@ -103,6 +105,7 @@ impl DisplayScreen {
 
         Plot::new("team_times")
             .auto_bounds(Vec2b::new(true, false))
+            .x_axis_formatter(x_axis_formatter)
             .show(ui, |plot_ui| {
                 let mut offset = 0.0;
                 for player in &self.players {
@@ -130,5 +133,17 @@ impl DisplayScreen {
 
             ui.add(line);
         }
+    }
+}
+
+fn x_axis_formatter(mark: GridMark, _: &RangeInclusive<f64>) -> String {
+    let timestamp = mark.value as i64;
+    let datetime = DateTime::<Utc>::from_timestamp(timestamp, 0).unwrap();
+
+    const SECONDS_IN_A_DAY: f64 = 24. * 60. * 60.;
+    if mark.step_size > SECONDS_IN_A_DAY {
+        datetime.format("%d %b %y").to_string()
+    } else {
+        datetime.format("%d %b %H:%M").to_string()
     }
 }

@@ -1,5 +1,5 @@
 use eframe::egui;
-use log::{debug};
+use log::debug;
 use login::LoginScreen;
 use screen::Screen;
 
@@ -7,6 +7,16 @@ pub mod display;
 pub mod login;
 pub mod screen;
 pub mod utils;
+
+/*
+Features to do:
+    Correct x-axis with proper naming
+    Name players on y-axis
+    Use actual team switch teams
+        Option to discard team color
+    Host on WebASM
+
+*/
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
@@ -36,9 +46,21 @@ impl EguiApp {
 
 impl eframe::App for EguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::TopBottomPanel::top("disclaimer").show(ctx, |ui| {
+            ui.heading("Not fit for analysis... Uses randomized data.");
+        });
+
+        egui::TopBottomPanel::bottom("version").show(ctx, |ui| {
+            let version_str = env!("CARGO_PKG_VERSION");
+            let info_str = format!(
+                "Sniping Analyser v{} - Source Code available at {}",
+                version_str, "NOT AVAILABLE"
+            );
+            ui.label(info_str);
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Some(next_screen) = self.current_screen.update(ui) {
-                debug!("Switching screen to {:?}", next_screen);
                 self.current_screen = next_screen;
             }
         });

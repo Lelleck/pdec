@@ -29,11 +29,13 @@ impl Screen for LoginScreen {
     fn update(&mut self, ui: &mut Ui) -> OptScreen {
         label_input(ui, "Endpoint: ", &mut self.endpoint);
         label_input(ui, "Username: ", &mut self.username);
+
         ui.horizontal(|ui| {
             ui.label("Password");
             let text_edit = TextEdit::singleline(&mut self.password).password(true);
             ui.add(text_edit);
         });
+
         ui.label(&self.message);
         if ui.button("Login").clicked() {
             return self.attempt_login();
