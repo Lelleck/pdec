@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use chrono::{DateTime, Utc};
 use egui::{Color32, RichText, Slider, Stroke, Ui, Vec2b};
-use egui_plot::{GridMark, Line, Plot, PlotPoint, PlotPoints, PlotUi, Text};
+use egui_plot::{GridMark, Line, Plot, PlotBounds, PlotPoint, PlotPoints, PlotUi, Text};
 use log::debug;
 use reqwest::blocking::Client;
 
@@ -123,7 +123,7 @@ impl DisplayScreen {
     fn update_plot_controls(&mut self, ui: &mut Ui) {
         ui.label("Plot Controls");
 
-        let spacing_slider = Slider::new(&mut self.spacing, 0.0..=0.1)
+        let spacing_slider = Slider::new(&mut self.spacing, 0.0..=2.0)
             .clamp_to_range(false)
             .text("Spacing");
         ui.add(spacing_slider);
@@ -145,6 +145,18 @@ impl DisplayScreen {
                     self.lines_for(offset, player, plot_ui);
                     offset = offset + self.spacing;
                 }
+
+                let previous_bounds = plot_ui.plot_bounds();
+                let [min_x, _] = previous_bounds.min();
+                let [max_x, _] = previous_bounds.max();
+
+                let min_y = -1.;
+
+                let space = self.spacing * self.players.len().saturating_sub(1) as f64;
+                let max_y = space + 1.;
+
+                let clamped_bounds = PlotBounds::from_min_max([min_x, min_y], [max_x, max_y]);
+                plot_ui.set_plot_bounds(clamped_bounds);
             });
     }
 
