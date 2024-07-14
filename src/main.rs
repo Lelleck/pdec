@@ -10,12 +10,11 @@ pub mod utils;
 
 /*
 Features to do:
-    Correct x-axis with proper naming
     Name players on y-axis
     Use actual team switch teams
         Option to discard team color
     Host on WebASM
-
+    Y-Axis aspect to x-axis
 */
 
 fn main() {
