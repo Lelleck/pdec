@@ -29,16 +29,13 @@ fn main() {
 }
 
 pub struct PdecApp {
-    current_screen: Box<dyn Screen>,
+    screen: Box<dyn Screen>,
 }
 
 impl PdecApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        let mut screen = LoginScreen::boxed();
-        screen.fill_from_environment();
-
         Self {
-            current_screen: screen,
+            screen: LoginScreen::boxed(),
         }
     }
 }
@@ -55,8 +52,8 @@ impl eframe::App for PdecApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            if let Some(next_screen) = self.current_screen.update(ui) {
-                self.current_screen = next_screen;
+            if let Some(next_screen) = self.screen.update(ui) {
+                self.screen = next_screen;
             }
         });
     }

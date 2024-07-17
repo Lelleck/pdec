@@ -1,5 +1,3 @@
-use std::env;
-
 use crate::utils::label_input;
 use egui::{TextEdit, Ui};
 use log::debug;
@@ -57,18 +55,6 @@ struct LoginResponse {
 }
 
 impl LoginScreen {
-    pub fn fill_from_environment(&mut self) -> Option<()> {
-        let endpoint = env::var("ANALYSER_ENDPOINT").ok()?;
-        let username = env::var("ANALYSER_USERNAME").ok()?;
-        let password = env::var("ANALYSER_PASSWORD").ok()?;
-
-        self.endpoint = endpoint;
-        self.username = username;
-        self.password = password;
-
-        None
-    }
-
     fn attempt_login(&mut self) -> OptScreen {
         let client = ClientBuilder::new()
             .cookie_store(true)
