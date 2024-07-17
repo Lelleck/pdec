@@ -55,3 +55,6 @@ Pdec does not by its own figure out the name of the player.
 By restrictions of CRCON and my laziness whenever you add a player you download all the logs that are stored of them.
 This can be quite a lot and can take some time to download.
 Pdec might freeze for up to a minute but as long as the window doesn't close it most likely hasn't crashed.
+
+After you have added a player you will probably have to zoom out quite a bit to the right as the x-axis starts at 1970.
+Don't zoom out too far either or the application will crash.
