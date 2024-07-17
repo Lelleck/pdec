@@ -3,7 +3,6 @@ use std::ops::RangeInclusive;
 use chrono::{DateTime, Utc};
 use egui::{Color32, RichText, Slider, Stroke, Ui, Vec2b};
 use egui_plot::{GridMark, Line, Plot, PlotBounds, PlotPoint, PlotPoints, PlotUi, Text};
-use log::debug;
 use reqwest::blocking::Client;
 
 use crate::{screen::Screen, utils::label_input};
@@ -115,7 +114,6 @@ impl DisplayScreen {
             for mark in marked {
                 let idx = self.players.iter().position(|p| p.0.id == mark).unwrap();
                 self.players.remove(idx);
-                debug!("Removed {} from watch list", mark);
             }
         });
     }

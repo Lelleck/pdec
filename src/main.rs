@@ -1,5 +1,4 @@
 use eframe::egui;
-use log::debug;
 use login::LoginScreen;
 use screen::Screen;
 
@@ -19,7 +18,6 @@ Features to do:
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    debug!("Running application");
     _ = eframe::run_native(
         "Pdec",
         native_options,

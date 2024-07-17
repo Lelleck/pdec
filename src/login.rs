@@ -1,6 +1,5 @@
 use crate::utils::label_input;
 use egui::{TextEdit, Ui};
-use log::debug;
 use reqwest::{blocking::ClientBuilder, Url};
 use serde_derive::{Deserialize, Serialize};
 
@@ -85,7 +84,6 @@ impl LoginScreen {
             return None;
         }
 
-        debug!("Successfully logged in");
         Some(DisplayScreen::boxed(client, self.endpoint.clone()))
     }
 }

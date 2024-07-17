@@ -88,12 +88,7 @@ pub fn get_team_times(client: &mut Client, endpoint: &str, id: String) -> Vec<Te
         .json::<HistoricalLogsResponse>()
         .expect("Failed to deserialize json");
 
-    let filtered_logs = response
-        .result
-        .into_iter()
-        .filter(|p| p.kind == "DISCONNECTED" || p.kind == "CONNECTED")
-        .collect::<Vec<_>>();
-
+    let filtered_logs = response.result;
     let intermediate = historical_log_into_intermediate(filtered_logs);
     extract_team_times(intermediate)
 }
