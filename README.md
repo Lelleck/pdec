@@ -4,7 +4,7 @@ Pdec is an small application to visualize connection times of players as pulled 
 It is a very hacky project with no a lot of safety in mind.
 It breaks easily and assumes users only put in correct data.
 
-[Pdec Screen](./pdec-screenshot.png)
+![Pdec Screenshot](./pdec-screenshot.png)
 
 # Running
 
