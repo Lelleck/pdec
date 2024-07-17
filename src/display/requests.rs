@@ -63,15 +63,17 @@ pub struct HistoricalLogsResponse {
 
 #[derive(Debug)]
 pub enum IntermediateTeamTime {
-    TeamSwitch(DateTime<Utc>, Team),
-    Disconnect(DateTime<Utc>),
+    Join(DateTime<Utc>),
+    Leave(DateTime<Utc>),
+    Kill(DateTime<Utc>, Team),
 }
 
 impl IntermediateTeamTime {
     pub fn time(&self) -> &DateTime<Utc> {
         match self {
-            IntermediateTeamTime::TeamSwitch(t, _) => t,
-            IntermediateTeamTime::Disconnect(t) => t,
+            IntermediateTeamTime::Join(t) => t,
+            IntermediateTeamTime::Leave(t) => t,
+            IntermediateTeamTime::Kill(t, _) => t,
         }
     }
 }
@@ -79,7 +81,7 @@ impl IntermediateTeamTime {
 pub fn get_team_times(client: &mut Client, endpoint: &str, id: String) -> Vec<TeamTime> {
     let url_text = format!("{}/api/get_historical_logs", endpoint);
     let url = Url::parse(&url_text).expect("Failed to turn into URL");
-    let body = HistoricalLogsRequest::by_id(id);
+    let body = HistoricalLogsRequest::by_id(id.clone());
     let response = client
         .post(url)
         .json(&body)
@@ -89,72 +91,113 @@ pub fn get_team_times(client: &mut Client, endpoint: &str, id: String) -> Vec<Te
         .expect("Failed to deserialize json");
 
     let filtered_logs = response.result;
-    let intermediate = historical_log_into_intermediate(filtered_logs);
+    let intermediate = historical_log_into_intermediate(&id, filtered_logs);
     extract_team_times(intermediate)
 }
 
-fn historical_log_into_intermediate(logs: Vec<HistoricalLog>) -> Vec<IntermediateTeamTime> {
+fn historical_log_into_intermediate(
+    id: &str,
+    logs: Vec<HistoricalLog>,
+) -> Vec<IntermediateTeamTime> {
     let mut times = vec![];
+    let re_str = format!(r"\((?P<team>[^/()]+)/{}\)", id);
+    let re = Regex::new(&re_str).unwrap();
 
     for historical_log in logs {
         if historical_log.kind == "DISCONNECTED" {
-            times.push(IntermediateTeamTime::Disconnect(historical_log.time()));
+            times.push(IntermediateTeamTime::Leave(historical_log.time()));
         }
         if historical_log.kind == "CONNECTED" {
-            /*
-            let re = Regex::new(r"-> ([^)]*)\)").unwrap();
-            let mut last_match = None;
-            for mat in re.find_iter(&historical_log.raw) {
-                last_match = Some(mat);
+            times.push(IntermediateTeamTime::Join(historical_log.time()));
+        }
+        if historical_log.kind == "KILL" {
+            if let Some(caps) = re.captures(&historical_log.raw) {
+                if let Some(team) = caps.name("team") {
+                    times.push(IntermediateTeamTime::Kill(
+                        historical_log.time(),
+                        Team::from_str(team.as_str()),
+                    ));
+                }
             }
-            */
-
-            // TODO: CRCON has a bug where it wont send the actual logs so we have to do this.
-            // let team_match = last_match.unwrap().as_str();
-            let team_match = "Allies";
-            let team = match team_match {
-                "Allies" => Team::Allies,
-                _ => Team::Axis,
-            };
-
-            times.push(IntermediateTeamTime::TeamSwitch(
-                historical_log.time(),
-                team,
-            ));
         }
     }
 
     times
 }
 
-fn extract_team_times(mut inters: Vec<IntermediateTeamTime>) -> Vec<TeamTime> {
-    if inters.is_empty() {
+#[derive(Debug, Clone)]
+enum ProcessingState {
+    Absent,
+    Present(DateTime<Utc>, Option<Team>),
+}
+
+fn extract_team_times(mut intermediaries: Vec<IntermediateTeamTime>) -> Vec<TeamTime> {
+    if intermediaries.is_empty() {
         return Vec::new();
     }
-    inters.sort_by(|a, b| a.time().cmp(b.time()));
+    intermediaries.sort_by(|a, b| a.time().cmp(b.time()));
 
-    let mut team_times = Vec::new();
-    let mut last = inters.first().unwrap();
-    for inter in &inters.iter().skip(1).collect::<Vec<_>>() {
-        let time = match (last, inter) {
+    let mut state = ProcessingState::Absent;
+    let mut times = vec![];
+
+    for intermediary in &intermediaries {
+        let mut new_state = state.clone();
+        let time = match (&state, intermediary) {
+            (ProcessingState::Absent, IntermediateTeamTime::Join(join_time)) => {
+                // Player joins
+                new_state = ProcessingState::Present(join_time.clone(), None);
+                None
+            }
             (
-                IntermediateTeamTime::TeamSwitch(old_time, old_team),
-                IntermediateTeamTime::TeamSwitch(new_time, _),
-            ) => Some(TeamTime::new(old_time, new_time, old_team)),
+                ProcessingState::Present(old_join_time, team),
+                IntermediateTeamTime::Join(new_join_time),
+            ) => {
+                // Player joins, again?!
+                new_state = ProcessingState::Present(new_join_time.clone(), None);
+                Some(TeamTime::new(old_join_time, new_join_time, team.clone()))
+            }
             (
-                IntermediateTeamTime::TeamSwitch(start, team),
-                IntermediateTeamTime::Disconnect(end),
-            ) => Some(TeamTime::new(start, end, team)),
-            (IntermediateTeamTime::Disconnect(_), IntermediateTeamTime::TeamSwitch(_, _)) => None,
-            (IntermediateTeamTime::Disconnect(_), IntermediateTeamTime::Disconnect(_)) => None,
+                ProcessingState::Present(join_time, team),
+                IntermediateTeamTime::Leave(leave_time),
+            ) => {
+                // Player leaves
+                new_state = ProcessingState::Absent;
+                Some(TeamTime::new(join_time, leave_time, team.clone()))
+            }
+            (
+                ProcessingState::Present(join_time, old_team),
+                IntermediateTeamTime::Kill(kill_time, new_team),
+            ) => {
+                // Player kills
+                if old_team.is_none() {
+                    // We now know the team of the player
+                    new_state = ProcessingState::Present(join_time.clone(), Some(new_team.clone()));
+                    None
+                } else {
+                    // We need to check whether the player has switched team
+                    match *old_team.as_ref().unwrap() == *new_team {
+                        // Player is still in the same team
+                        true => None,
+                        false => {
+                            // The player has switched team
+                            new_state =
+                                ProcessingState::Present(kill_time.clone(), Some(new_team.clone()));
+                            Some(TeamTime::new(join_time, kill_time, old_team.clone()))
+                        }
+                    }
+                }
+            }
+            // (ProcessingState::Disconnected, IntermediateTeamTime::Disconnect(_)) -> Player leaves twice
+            // (ProcessingState::Absent, IntermediateTeamTime::Kill(time, team)) -> Player kills without being here
+            _ => None,
         };
 
         if let Some(time) = time {
-            team_times.push(time);
-        }
+            times.push(time);
+        };
 
-        last = inter;
+        state = new_state;
     }
 
-    team_times
+    times
 }
