@@ -21,18 +21,18 @@ fn main() {
     let native_options = eframe::NativeOptions::default();
     debug!("Running application");
     _ = eframe::run_native(
-        "Sniping Analyser",
+        "Pdec",
         native_options,
-        Box::new(|cc| Ok(Box::new(EguiApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(PdecApp::new(cc)))),
     )
     .unwrap();
 }
 
-pub struct EguiApp {
+pub struct PdecApp {
     current_screen: Box<dyn Screen>,
 }
 
-impl EguiApp {
+impl PdecApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let mut screen = LoginScreen::boxed();
         screen.fill_from_environment();
@@ -43,13 +43,13 @@ impl EguiApp {
     }
 }
 
-impl eframe::App for EguiApp {
+impl eframe::App for PdecApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::bottom("version").show(ctx, |ui| {
             let version_str = env!("CARGO_PKG_VERSION");
             let info_str = format!(
-                "Sniping Analyser v{} - Source Code available at {}",
-                version_str, "NOT AVAILABLE"
+                "Pdec v{} - Source Code available at {}",
+                version_str, "https://github.com/Lelleck/pdec"
             );
             ui.label(info_str);
         });
