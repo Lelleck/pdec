@@ -9,15 +9,6 @@ pub mod login;
 pub mod screen;
 pub mod utils;
 
-/*
-Features to do:
-    Name players on y-axis
-    Use actual team switch teams
-        Option to discard team color
-    Host on WebASM
-    Y-Axis aspect to x-axis
-*/
-
 fn main() {
     let native_options = eframe::NativeOptions::default();
     _ = eframe::run_native(
